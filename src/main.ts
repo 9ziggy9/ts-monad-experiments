@@ -1,41 +1,25 @@
-type Frame = {
-  id: `frame-${number}`;
-  ref: {name: string, value: number};
+// Note that I am ASSUMING that a user will implement unit (construction function)
+interface Monad<T> {
+  chain<U>(fn: (value: T) => Monad<U>): Monad<U>;
 }
 
-type FrameCollection = {[id: Frame["id"]]: Frame};
-
-interface Endofunctor<T> {
-  map(fn: (element: T) => T): Endofunctor<T>;
-  log(): void;
-}
-
-const toFrames = (...fs: Frame[]): Endofunctor<Frame> => {
-  const __frames: FrameCollection = fs
-    .reduce<FrameCollection>((collection, frame) => ({
-      ...collection,
-      [frame.id]: frame,
-    }), {});
-  return {
-    map: (fn) => toFrames(...Object.values(
-      Object.entries(__frames)
-      .reduce<FrameCollection>((collection, [id, frame]) => ({
-        ...collection,
-        [id]: fn(frame)
-      }), {})
-    )),
-    log: () => console.log(JSON.stringify(__frames, null, 2))
-  };
+type Maybe<T> = Monad<T> & {
+  isNothing:  () => boolean;
+  getData:    () => T | null;
 };
 
-const xs = toFrames(
-  {id: "frame-1", ref: {name: "hello", value: 10}},
-  {id: "frame-2", ref: {name: "goodbye", value: 99}},
-)
+const Just = <T>(data: T): Maybe<T> => ({
+  chain:     <U>(fn: (data: T) => Maybe<U>): Maybe<U> => fn(data),
+  isNothing: () => false,
+  getData:   () => data,
+});
 
-xs.log();
+const Nothing = <T>(): Maybe<T> => ({
+  chain:     <U>(): Maybe<U> => Nothing(),
+  isNothing: () => true,
+  getData:   () => null,
+});
 
-xs.map(frame => ({
-  ...frame,
-  ref: {name: frame.ref.name + "new", value: frame.ref.value * (-1)}
-})).log()
+const Maybe = <T>(data: T | null | undefined): Maybe<T> => data == null
+  ? Nothing()
+  : Just(data);
