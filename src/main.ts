@@ -1,9 +1,11 @@
 // Note that I am ASSUMING that a user will implement unit (construction function)
+// Due to type inference you can't extend this with types in TS, sucks.
 interface Monad<T> {
   chain<U>(fn: (value: T) => Monad<U>): Monad<U>;
 }
 
-type Maybe<T> = Monad<T> & {
+type Maybe<T> = {
+  chain<U>(fn: (value: T) => Maybe<U>): Maybe<U>;
   isNothing:  () => boolean;
   getData:    () => T | null;
 };
@@ -86,3 +88,5 @@ IO(() => 10)
   .chain((n) => log(n))
   .chain((n) => log(n))
   .run();
+
+// LOOK INTO: monad transformers
